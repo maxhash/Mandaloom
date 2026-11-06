@@ -38,8 +38,8 @@ export interface WorkspaceRepository {
 export class WorkspaceError extends Error {
  constructor(public code:string,message:string){super(message);}
 }
-function summary(n:Objective){return {url:APP_ORIGIN+gridHref(n.id),id:n.id,parentId:n.parentId,rootId:n.rootId,position:n.position,title:n.title,status:n.status,dueDate:n.dueDate,priority:n.priority};}
-function breadcrumbs(nodes:Objective[],nodeId:string){const references=referenceLookup(nodes);return trail(nodes,nodeId).map(n=>({id:n.id,title:n.title,url:APP_ORIGIN+gridHref(n.id),...references(n.id)}));}
+function summary(n:Objective,nodes:Objective[]){return {url:APP_ORIGIN+gridHref(n.id,nodes),id:n.id,parentId:n.parentId,rootId:n.rootId,position:n.position,title:n.title,status:n.status,dueDate:n.dueDate,priority:n.priority};}
+function breadcrumbs(nodes:Objective[],nodeId:string){const references=referenceLookup(nodes);return trail(nodes,nodeId).map(n=>({id:n.id,title:n.title,url:APP_ORIGIN+gridHref(n.id,nodes),...references(n.id)}));}
 function requireNode(nodes:Objective[],nodeId:string){const node=nodes.find(n=>n.id===nodeId);if(!node)throw new WorkspaceError('NOT_FOUND','Objective not found in this workspace.');return node;}
 
 export async function executeTool(name:ToolName,raw:unknown,repo:WorkspaceRepository):Promise<Record<string,unknown>> {
@@ -52,15 +52,15 @@ export async function executeTool(name:ToolName,raw:unknown,repo:WorkspaceReposi
  if(workspace.schemaVersion!==2)throw new WorkspaceError('SETUP_REQUIRED','The workspace database needs the progress migration.');
  const assigned=assignReferences(parseBackup(backup(workspace.nodes)),workspace.nextRootNumber??1);
  const nodes=assigned.nodes,revision=workspace.revision,references=referenceLookup(nodes);
- const display=(n:Objective)=>({...n,url:APP_ORIGIN+gridHref(n.id),...references(n.id)});
+ const display=(n:Objective)=>({...n,url:APP_ORIGIN+gridHref(n.id,nodes),...references(n.id)});
  if('expectedRevision' in args && args.expectedRevision!==revision)throw new WorkspaceError('CONFLICT','Workspace changed. Read the affected grid again and review before retrying with a new request ID.');
  if('revision' in args && args.revision!==undefined && args.revision!==revision)throw new WorkspaceError('CONFLICT','Workspace changed between pages. Restart the read.');
  if(name==='get_connection')return {...repo.connection,revision,workspaceUrl:'https://mandaloom.vercel.app'};
- if(name==='list_mandalas')return {revision,mandalas:hierarchyRows(nodes).filter(r=>r.depth===0).map(r=>({...summary(r.node),...references(r.node.id)}))};
+ if(name==='list_mandalas')return {revision,mandalas:hierarchyRows(nodes).filter(r=>r.depth===0).map(r=>({...summary(r.node,nodes),...references(r.node.id)}))};
  if(name==='get_grid' && 'nodeId' in args){const centre=requireNode(nodes,args.nodeId);const children=nodes.filter(n=>n.parentId===centre.id).sort((a,b)=>a.position-b.position);return {revision,centre:display(centre),children:children.map(display),emptyPositions:positions.filter(p=>!children.some(n=>n.position===p)),path:breadcrumbs(nodes,centre.id)};}
  if(name==='get_objective' && 'nodeId' in args)return {revision,objective:display(requireNode(nodes,args.nodeId)),path:breadcrumbs(nodes,args.nodeId)};
  if(name==='get_subtree' && 'nodeId' in args && 'offset' in args){requireNode(nodes,args.nodeId);const included=descendants(nodes,args.nodeId);const rows=hierarchyRows(nodes).filter(r=>included.has(r.node.id));const page=rows.slice(args.offset,args.offset+args.limit);return {revision,nodes:page.map(r=>display(r.node)),nextOffset:args.offset+page.length<rows.length?args.offset+page.length:null,total:rows.length};}
- if(name==='search_objectives' && 'query' in args){const query=args.query.toLowerCase();const found=hierarchyRows(nodes).filter(({node:n})=>(n.title+' '+n.description+' '+references(n.id)?.fullReference).toLowerCase().includes(query));const page=found.slice(args.offset,args.offset+args.limit);return {revision,results:page.map(({node})=>({...summary(node),...references(node.id),path:breadcrumbs(nodes,node.id)})),nextOffset:args.offset+page.length<found.length?args.offset+page.length:null,total:found.length};}
+ if(name==='search_objectives' && 'query' in args){const query=args.query.toLowerCase();const found=hierarchyRows(nodes).filter(({node:n})=>(n.title+' '+n.description+' '+references(n.id)?.fullReference).toLowerCase().includes(query));const page=found.slice(args.offset,args.offset+args.limit);return {revision,results:page.map(({node})=>({...summary(node,nodes),...references(node.id),path:breadcrumbs(nodes,node.id)})),nextOffset:args.offset+page.length<found.length?args.offset+page.length:null,total:found.length};}
  let next=nodes;const changed:Objective[]=[];
  const add=(parentId:string|null,slot:number|undefined,values:z.infer<typeof newFields>)=>{
   const parent=parentId===null?undefined:requireNode(nodes,parentId);
@@ -77,5 +77,5 @@ export async function executeTool(name:ToolName,raw:unknown,repo:WorkspaceReposi
  if(!('requestId' in args))throw new WorkspaceError('INVALID_REQUEST','Missing request ID.');
  const numbered=assignReferences(next,assigned.nextRootNumber).nodes;
  const nextReferences=referenceLookup(numbered);
- return repo.commit(revision,numbered,args.requestId,fingerprint,{objectives:changed.map(n=>({...numbered.find(x=>x.id===n.id)!,...nextReferences(n.id),url:APP_ORIGIN+gridHref(n.id)}))});
+ return repo.commit(revision,numbered,args.requestId,fingerprint,{objectives:changed.map(n=>({...numbered.find(x=>x.id===n.id)!,...nextReferences(n.id),url:APP_ORIGIN+gridHref(n.id,numbered)}))});
 }

@@ -1,0 +1,5 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {assignReferences,seed,makeNode} from '../src/lib/model';
+import {gridHref,resolveGrid} from '../src/lib/navigation';
+test('readable routes resolve stable references independently of position and accept old UUID links',()=>{const original=seed();original.push(makeNode('Nested',original[1],0));const nodes=assignReferences(original).nodes;const nested=nodes.at(-1)!;assert.equal(gridHref(nested.id,nodes),'/m/M001/R.1.1');assert.equal(resolveGrid(nodes,'/m/M001/R.1.1').id,nested.id);assert.equal(resolveGrid(nodes,'/','?grid='+nested.id).id,nested.id);const swapped=nodes.map(n=>n.id===nodes[1].id?{...n,position:1,title:'Renamed'}:n.id===nodes[2].id?{...n,position:0}:n);assert.equal(gridHref(nested.id,swapped),'/m/M001/R.1.1');assert.equal(resolveGrid(swapped,'/m/M001/R.1.1').id,nested.id);for(const path of ['/m/M999/R','/m/M001/R.99','/m/M001/R.0','/m/M001/R.%','/m/M001/R.1.1.1'])assert.equal(resolveGrid(nodes,path).missing,true);assert.equal(resolveGrid(nodes,'/m/m1/r.1/').id,nodes[1].id);assert.equal(resolveGrid([], '/m/M001/R').id,'');});

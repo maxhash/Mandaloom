@@ -1,0 +1,53 @@
+import { test, expect } from '@playwright/test';
+test('recursive workflow, reordering, search and persistence',async({page})=>{
+ await page.goto('/');
+ await expect(page.getByRole('heading',{name:'Establish and Operate a Profitable Proprietary Trading Firm',level:1})).toBeVisible();
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
+ await expect(page.getByRole('heading',{name:'Trading Strategy',level:1})).toBeVisible();
+ await page.getByRole('button',{name:'Add objective'}).first().click();
+ await page.getByLabel('Title',{exact:true}).fill('Repeatable edge');
+ await page.getByLabel('Description',{exact:true}).fill('A documented research process.');
+ await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.getByRole('heading',{name:'Repeatable edge'})).toBeVisible();
+ await page.getByRole('button',{name:'Edit Repeatable edge',exact:true}).click();
+ await page.getByLabel('Grid position').selectOption('8');
+ await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.mandala-grid > :nth-child(9)')).toContainText('Repeatable edge');
+ await page.getByRole('status').filter({hasText:'Saved on this browser'}).waitFor();
+ await page.reload();
+ await page.getByLabel('Search objectives').fill('Repeatable');
+ await page.locator('.results button').click();
+ await expect(page.getByRole('heading',{name:'Repeatable edge',level:1})).toBeVisible();
+ await page.getByRole('button',{name:'Add objective'}).first().click();
+ await page.getByLabel('Title',{exact:true}).fill('Nested task');
+ await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.getByRole('heading',{name:'Nested task'})).toBeVisible();
+});
+test('export, safe additive import and mobile layout',async({page})=>{
+ await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();
+ await page.screenshot({path:'test-results/mandaloom-desktop.png',fullPage:true});
+ const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Export',exact:true}).click();const download=await downloadEvent;
+ const path=await download.path();await page.locator('input[type=file]').setInputFiles(path!);
+ await expect(page.locator('.root-item')).toHaveCount(2);
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.locator('.mandala-grid')).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ await page.screenshot({path:'test-results/mandaloom-mobile.png',fullPage:true});
+ await page.getByRole('button',{name:'Open explorer'}).click();
+ await expect(page.getByLabel('Search objectives')).toBeVisible();
+});
+test('occupied-cell swap, completion, confirmed subtree deletion and invalid import',async({page})=>{
+ await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();
+ await page.getByRole('button',{name:'Edit Trading Strategy',exact:true}).click();
+ await page.getByLabel('Grid position').selectOption('1');await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.mandala-grid > :nth-child(1)')).toContainText('Research & Analytics');
+ await expect(page.locator('.mandala-grid > :nth-child(2)')).toContainText('Trading Strategy');
+ await page.getByRole('button',{name:'Complete Trading Strategy',exact:true}).click();
+ await expect(page.locator('.mandala-grid > :nth-child(2)')).toHaveClass(/completed/);
+ await page.getByRole('button',{name:'Edit Trading Strategy',exact:true}).click();page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Add objective'})).toHaveCount(1);
+ await page.locator('input[type=file]').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{"format":"invalid"}')});
+ await expect(page.locator('.error-banner')).toContainText('Unsupported backup');
+ await expect(page.locator('.mandala-grid .cell')).toHaveCount(9);
+});
+

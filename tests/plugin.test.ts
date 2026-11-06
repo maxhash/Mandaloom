@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {makeNode,seed,type Objective} from '../src/lib/model';
 import {executeTool,type Snapshot,type WorkspaceRepository} from '../src/lib/mcp/tools';
 import {checkPluginClaims,AuthenticationError} from '../src/lib/mcp/repository';
-import {MCP_RESOURCE} from '../src/lib/mcp/config';
+import {authorizationServer,MCP_RESOURCE} from '../src/lib/mcp/config';
 import {handleMcpRequest} from '../src/lib/mcp/server';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -16,6 +16,11 @@ function repository(nodes=seed()):WorkspaceRepository & {snapshot:Snapshot} {
   async commit(revision:number,next:Objective[],id:string,fingerprint:string,result:Record<string,unknown>){const receipt=await repo.receipt(id,fingerprint);if(receipt)return receipt;if(revision!==repo.snapshot.revision)throw Error('Save conflict');repo.snapshot={...repo.snapshot,nodes:next,revision:revision+1};const stored={...result,revision:revision+1};receipts.set(id,{fingerprint,result:stored});return stored;},
  };return repo;
 }
+test('OAuth discovery normalizes pasted environment values before forming the issuer',()=>{
+ const original=process.env.NEXT_PUBLIC_SUPABASE_URL;
+ try{process.env.NEXT_PUBLIC_SUPABASE_URL=' https://project.supabase.co/\r\n';assert.equal(authorizationServer(),'https://project.supabase.co/auth/v1');}
+ finally{if(original===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=original;}
+});
 test('plugin fills only empty cells atomically and edits nested objectives without changing hierarchy',async()=>{
  const repo=repository();const parent=repo.snapshot.nodes[1];const original=structuredClone(repo.snapshot.nodes);
  const result=await executeTool('populate_grid',{expectedRevision:4,requestId:crypto.randomUUID(),parentId:parent.id,objectives:[{position:0,fields:{title:'Approach',deliverable:'Report'}},{position:1,fields:{title:'Research',status:'In progress'}}]},repo);

@@ -11,7 +11,7 @@ export function checkPluginClaims(claims:Record<string,unknown>,issuer:string,no
 export async function authenticatedRepository(authorization:string|null):Promise<WorkspaceRepository> {
  if(!authorization?.startsWith('Bearer ') || authorization.length>20000)throw new AuthenticationError('Sign in to Mandaloom.');
  const token=authorization.slice(7);
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL, key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(), key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
  if(!url||!key)throw Error('Supabase is not configured.');
  const client=createClient(url,key,{global:{headers:{Authorization:`Bearer ${token}`}},auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  // getClaims verifies signature using Supabase JWKS (or Auth for legacy signing keys).

@@ -6,6 +6,6 @@ node_modules/
 test-results/
 .vercel/
 *.log
-artifacts/*.zip
+artifacts/
 
 .vercel

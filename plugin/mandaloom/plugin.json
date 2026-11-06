@@ -1,22 +1,32 @@
 {
-  "$schema":"https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name":"mandaloom",
-  "version":"0.1.0",
-  "description":"Read and populate private recursive Mandala grids, and edit objective progress fields through your Mandaloom account.",
-  "author":{"name":"maxhash"},
-  "homepage":"https://mandaloom.vercel.app/connections",
-  "repository":"https://github.com/maxhash/Mandaloom",
-  "extensions":{"com.openai":{"interface":{
-    "displayName":"Mandaloom",
-    "shortDescription":"Read and edit your Mandalas",
-    "longDescription":"Connect your private Mandaloom workspace. Find objectives, explore nested grids, create roots and supporting objectives, populate empty grid cells in a batch, and edit text fields or statuses. Sign in with your existing account and grant read-only or editing access. Revision checks protect existing work; no delete or move tools are included.",
-    "developerName":"maxhash",
-    "category":"Business & Operations",
-    "capabilities":["Read","Write"],
-    "defaultPrompt":"Read my Mandaloom workspace and help me populate a grid.",
-    "logo":"./assets/icon.svg",
-    "composerIcon":"./assets/icon.svg",
-    "brandColor":"#35624B",
-    "brandColorDark":"#C1D6AD"
-  }}}
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "mandaloom",
+  "version": "0.1.1",
+  "description": "Read and populate private recursive Mandala grids, and edit objective progress fields through your Mandaloom account.",
+  "author": {
+    "name": "maxhash"
+  },
+  "homepage": "https://mandaloom.vercel.app/connections",
+  "repository": "https://github.com/maxhash/Mandaloom",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Mandaloom",
+        "shortDescription": "Read and edit your Mandalas",
+        "longDescription": "Connect your private Mandaloom workspace. Find objectives, explore nested grids, create roots and supporting objectives, populate empty grid cells in a batch, and edit text fields or statuses. Sign in with your existing account and grant read-only or editing access. Revision checks protect existing work; no delete or move tools are included.",
+        "developerName": "maxhash",
+        "category": "Business & Operations",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": "Read my Mandaloom workspace and help me populate a grid.",
+        "logo": "./assets/icon.svg",
+        "composerIcon": "./assets/icon.svg",
+        "brandColor": "#35624B",
+        "brandColorDark": "#C1D6AD"
+      },
+      "apps": "./.app.json"
+    }
+  }
 }

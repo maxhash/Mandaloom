@@ -4,6 +4,8 @@ The endpoint is `https://mandaloom.vercel.app/mcp` (stateless MCP Streamable HTT
 
 The private plugin is saved to the owner's account: [Mandaloom](https://chatgpt.com/plugins/plugins_6aee40d83ff4819180225579be24078d). Plugin ID: `plugins_6aee40d83ff4819180225579be24078d`. Initial release ID: `pluginrel_6aee40d9b870819196a7c18531c6d1c8`. Reuse this identity for future updates; do not create duplicate plugins. Installation and OAuth connection are separate from creation.
 
+Version 0.1.1 links the verified ChatGPT app `asdk_app_6aee4a78df248191b643e2f22f5f9b95` (Mandaloom connection) through `.app.json`. Release: `pluginrel_6aee4c28c68c819186911bc5be366f72`. The original plugin's instructions and identity are preserved. Its raw MCP server map is now empty to avoid a second connection. Keep the underlying Mandaloom connection installed/authorised. This is a private, account-specific package; it is not a public-directory submission package.
+
 ## One-time Supabase setup
 
 1. Apply `supabase/migrations/003_private_plugin.sql` in the Supabase SQL editor **after 001 and 002**. This preserves objectives and adds connection grants, idempotency receipts and protected RPCs. Do not rerun earlier migrations.

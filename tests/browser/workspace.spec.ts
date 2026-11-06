@@ -24,6 +24,18 @@ test('recursive workflow, reordering, search and persistence',async({page})=>{
  await page.getByRole('button',{name:'Save changes'}).click();
  await expect(page.getByRole('heading',{name:'Nested task'})).toBeVisible();
 });
+test('new descendants appear under their parent in the explorer after creation and reload',async({page})=>{
+ await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
+ await page.getByRole('button',{name:'Add objective'}).first().click();await page.getByLabel('Title',{exact:true}).fill('Trading Approach');await page.getByRole('button',{name:'Save changes'}).click();
+ const rows=page.locator('.tree-list .tree-node');
+ await expect(rows.nth(1)).toHaveText('Trading Strategy');await expect(rows.nth(2)).toHaveText('Trading Approach');await expect(rows.nth(3)).toHaveText('Research & Analytics');
+ expect(await rows.nth(2).evaluate(el=>parseInt(getComputedStyle(el).paddingLeft))).toBeGreaterThan(await rows.nth(1).evaluate(el=>parseInt(getComputedStyle(el).paddingLeft)));
+ await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));await page.reload();
+ await expect(rows.nth(2)).toHaveText('Trading Approach');await rows.nth(2).click();await expect(page.getByRole('heading',{name:'Trading Approach',level:1})).toBeVisible();
+ await expect(page.locator('.breadcrumbs')).toContainText('Trading Strategy');
+ await page.getByLabel('Search objectives').fill('Trading Approach');await expect(rows).toHaveCount(3);await expect(rows.nth(1)).toHaveText('Trading Strategy');await expect(rows.nth(2)).toHaveText('Trading Approach');
+});
 test('progress fields persist at root and nested levels, cancel is isolated and mobile actions remain accessible',async({page})=>{
  await page.setViewportSize({width:390,height:740});
  await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();

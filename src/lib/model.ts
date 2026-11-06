@@ -7,6 +7,36 @@ export function makeNode(title: string, parent?: Objective, position = 4): Objec
 export function seed(): Objective[] { const root = makeNode('Establish and Operate a Profitable Proprietary Trading Firm'); root.description = 'Build a durable trading business through disciplined research, controlled risk and consistent execution.'; return [root, ...['Trading Strategy','Research & Analytics','Risk Management','Capital & Funding','Legal & Compliance','Technology & Data','Operations','Performance & Growth'].map((title,i) => makeNode(title,root,positions[i]))]; }
 export function descendants(nodes: Objective[], id: string): Set<string> { const children = new Map<string,Objective[]>(); for (const n of nodes) if(n.parentId) children.set(n.parentId,[...(children.get(n.parentId) ?? []),n]); const found = new Set<string>(), queue = [id]; while(queue.length) { const x = queue.pop()!; if(found.has(x)) continue; found.add(x); for(const n of children.get(x) ?? []) queue.push(n.id); } return found; }
 export function trail(nodes: Objective[], id: string): Objective[] { const map = new Map(nodes.map(n=>[n.id,n])), result: Objective[] = [], seen = new Set<string>(); let n = map.get(id); while(n && !seen.has(n.id)) { result.push(n); seen.add(n.id); n = n.parentId ? map.get(n.parentId) : undefined; } return result.reverse(); }
+export function hierarchyRows(nodes: Objective[], query = ''): {node: Objective; depth: number}[] {
+ const children = new Map<string | null, Objective[]>();
+ const byId = new Map(nodes.map(n => [n.id, n]));
+ for (const node of nodes) {
+  const siblings = children.get(node.parentId);
+  if (siblings) siblings.push(node); else children.set(node.parentId, [node]);
+ }
+ for (const [parent, siblings] of children) siblings.sort((a,b) => parent === null ? a.createdAt.localeCompare(b.createdAt) : a.position-b.position);
+ const search = query.trim().toLowerCase();
+ const visible = new Set<string>();
+ if (search) for (const node of nodes) {
+  if (!node.title.toLowerCase().includes(search)) continue;
+  let ancestor: Objective | undefined = node;
+  while (ancestor && !visible.has(ancestor.id)) {
+   visible.add(ancestor.id);
+   ancestor = ancestor.parentId ? byId.get(ancestor.parentId) : undefined;
+  }
+ }
+ const rows: {node: Objective; depth: number}[] = [];
+ const pending = (children.get(null) ?? []).map(node => ({node,depth:0})).reverse();
+ const visited = new Set<string>();
+ while (pending.length) {
+  const row = pending.pop()!;
+  if (visited.has(row.node.id) || (search && !visible.has(row.node.id))) continue;
+  visited.add(row.node.id); rows.push(row);
+  const nested = children.get(row.node.id) ?? [];
+  for (let i=nested.length-1;i>=0;i--) pending.push({node:nested[i],depth:row.depth+1});
+ }
+ return rows;
+}
 export function parseBackup(value: unknown): Objective[] {
  if(!value || typeof value !== 'object') throw Error('Invalid backup.');
  const input = value as {format?: string; version?: number; nodes?: unknown[]};

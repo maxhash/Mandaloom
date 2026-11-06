@@ -23,3 +23,16 @@ html[data-theme=dark] .destructive{background:#452c28;color:#f2b8a8}
 html[data-theme=dark] .error{color:#f2b8a8!important}
 html[data-theme=dark] .login-card{background:var(--paper)}
 @media(max-width:760px){.theme-toggle{right:15px;bottom:12px}}
+
+/* Progress labels remain compact and readable in both themes and narrow grids. */
+.objective-status{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;font-size:9px;line-height:1.5;border-radius:4px;padding:3px 6px;margin:0 0 12px;color:#586354;background:#eef1e9;white-space:nowrap}
+.objective-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.status-in-progress{background:#e6edde;color:#49673b}.status-blocked{background:#f5e7d9;color:#8b5429}.status-complete{background:#deebdc;color:#396540}
+.center-cell .objective-status{align-self:center}
+html[data-theme=dark] .objective-status{background:#334032;color:#c2cdbb}
+html[data-theme=dark] .status-in-progress{background:#334d35;color:#c2dfb1}
+html[data-theme=dark] .status-blocked{background:#513d2a;color:#f0cb9e}
+html[data-theme=dark] .status-complete{background:#2f4935;color:#b4ddbc}
+.editor{max-height:calc(100dvh - 40px);padding-bottom:0;overscroll-behavior:contain}
+.editor-actions{position:sticky;bottom:0;background:var(--paper);padding:16px 0;margin-top:20px;z-index:1}
+@media(max-width:760px){.objective-status{font-size:8px;padding:3px 4px;gap:4px}.cell{min-height:180px}.title-row>.button{display:inline-flex;margin-top:0}.title-row{flex-wrap:wrap}.editor{padding-bottom:0}.editor-actions .button{padding:10px 11px}}

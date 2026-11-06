@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import {seed} from '../../src/lib/model';
 test('recursive workflow, reordering, search and persistence',async({page})=>{
  await page.goto('/');
  await expect(page.getByRole('heading',{name:'Establish and Operate a Profitable Proprietary Trading Firm',level:1})).toBeVisible();
@@ -13,7 +14,7 @@ test('recursive workflow, reordering, search and persistence',async({page})=>{
  await page.getByLabel('Grid position').selectOption('8');
  await page.getByRole('button',{name:'Save changes'}).click();
  await expect(page.locator('.mandala-grid > :nth-child(9)')).toContainText('Repeatable edge');
- await page.getByRole('status').filter({hasText:'Saved on this browser'}).waitFor();
+ await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));
  await page.reload();
  await page.getByLabel('Search objectives').fill('Repeatable');
  await page.locator('.results button').click();
@@ -22,6 +23,48 @@ test('recursive workflow, reordering, search and persistence',async({page})=>{
  await page.getByLabel('Title',{exact:true}).fill('Nested task');
  await page.getByRole('button',{name:'Save changes'}).click();
  await expect(page.getByRole('heading',{name:'Nested task'})).toBeVisible();
+});
+test('progress fields persist at root and nested levels, cancel is isolated and mobile actions remain accessible',async({page})=>{
+ await page.setViewportSize({width:390,height:740});
+ await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();
+ await page.getByRole('button',{name:'Edit objective',exact:true}).click();
+ const edit=page.getByRole('dialog');
+ await expect(edit.getByLabel('Status',{exact:true})).toHaveValue('Not started');
+ await edit.getByLabel('Description',{exact:true}).fill('Purpose and scope');
+ await edit.getByLabel('Deliverable',{exact:true}).fill('An operating plan');
+ await edit.getByLabel('Completion criteria',{exact:true}).fill('Reviewed\nApproved');
+ await edit.getByLabel('Status',{exact:true}).selectOption('In progress');
+ await edit.getByLabel('Next action',{exact:true}).fill('Draft the plan');
+ await edit.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.center-cell .objective-status')).toHaveText('In progress');
+ await expect(page.locator('.mandala-grid')).not.toContainText('An operating plan');
+ await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));await page.reload();
+ await page.getByRole('button',{name:'Edit objective',exact:true}).click();
+ await expect(edit.getByLabel('Deliverable',{exact:true})).toHaveValue('An operating plan');
+ await expect(edit.getByLabel('Description',{exact:true})).toHaveValue('Purpose and scope');
+ await expect(edit.getByLabel('Completion criteria',{exact:true})).toHaveValue('Reviewed\nApproved');
+ await expect(edit.getByLabel('Next action',{exact:true})).toHaveValue('Draft the plan');
+ await expect(edit.getByLabel('Status',{exact:true})).toHaveValue('In progress');
+ await edit.getByLabel('Deliverable',{exact:true}).fill('Discard me');await edit.getByLabel('Status',{exact:true}).selectOption('Complete');
+ await edit.screenshot({path:'test-results/progress-editor-mobile.png'});
+ await edit.getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(page.locator('.center-cell .objective-status')).toHaveText('In progress');
+ await page.getByRole('button',{name:'Edit objective',exact:true}).click();await expect(edit.getByLabel('Deliverable',{exact:true})).toHaveValue('An operating plan');await edit.getByRole('button',{name:'Cancel',exact:true}).click();
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
+ await page.getByRole('button',{name:'Add objective'}).first().click();
+ await edit.getByLabel('Title',{exact:true}).fill('Nested progress');await edit.getByLabel('Deliverable',{exact:true}).fill('Nested report');await edit.getByLabel('Completion criteria',{exact:true}).fill('Results reviewed');await edit.getByLabel('Next action',{exact:true}).fill('Run research');await edit.getByLabel('Status',{exact:true}).selectOption('Blocked');await edit.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.grid-toolbar')).toContainText('0 of 1 complete');
+ await expect(page.locator('.objective-status.status-blocked')).toHaveText('Blocked');
+ await page.getByRole('button',{name:'Edit Nested progress',exact:true}).click();await edit.getByLabel('Status',{exact:true}).selectOption('Complete');await edit.getByRole('button',{name:'Save changes'}).click();await expect(page.locator('.grid-toolbar')).toContainText('1 of 1 complete');
+ await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));await page.reload();
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();await page.getByRole('button',{name:'Edit Nested progress',exact:true}).click();await expect(edit.getByLabel('Deliverable',{exact:true})).toHaveValue('Nested report');await expect(edit.getByLabel('Completion criteria',{exact:true})).toHaveValue('Results reviewed');await expect(edit.getByLabel('Next action',{exact:true})).toHaveValue('Run research');await expect(edit.getByLabel('Status',{exact:true})).toHaveValue('Complete');
+});
+test('legacy browser objectives retain their completion indicators and content',async({page})=>{
+ const legacy=seed().map(({status,deliverable,completionCriteria,nextAction,...n},i)=>({...n,...(i===2?{}:{completed:i===1})}));
+ await page.addInitScript(data=>{localStorage.setItem('mandaloom-demo',JSON.stringify({format:'mandaloom',version:1,nodes:data}));},legacy);
+ await page.goto('/');await expect(page.locator('.grid-toolbar')).toContainText('1 of 8 complete');
+ await page.getByRole('button',{name:'Edit Trading Strategy',exact:true}).click();await expect(page.getByLabel('Status',{exact:true})).toHaveValue('Complete');await expect(page.getByLabel('Grid position')).toHaveValue('0');await page.getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(page.locator('.mandala-grid > :nth-child(2) .objective-status')).toHaveText('Not started');
 });
 test('export, safe additive import and mobile layout',async({page})=>{
  await page.goto('/');await expect(page.locator('.mandala-grid')).toBeVisible();
@@ -42,7 +85,9 @@ test('occupied-cell swap, completion, confirmed subtree deletion and invalid imp
  await page.getByLabel('Grid position').selectOption('1');await page.getByRole('button',{name:'Save changes'}).click();
  await expect(page.locator('.mandala-grid > :nth-child(1)')).toContainText('Research & Analytics');
  await expect(page.locator('.mandala-grid > :nth-child(2)')).toContainText('Trading Strategy');
- await page.getByRole('button',{name:'Complete Trading Strategy',exact:true}).click();
+ await page.getByRole('button',{name:'Edit Trading Strategy',exact:true}).click();
+ await page.getByLabel('Status',{exact:true}).selectOption('Complete');
+ await page.getByRole('button',{name:'Save changes'}).click();
  await expect(page.locator('.mandala-grid > :nth-child(2)')).toHaveClass(/completed/);
  await page.getByRole('button',{name:'Edit Trading Strategy',exact:true}).click();page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete',exact:true}).click();
  await expect(page.getByRole('button',{name:'Add objective'})).toHaveCount(1);

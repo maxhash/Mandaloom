@@ -18,7 +18,7 @@ Open http://localhost:3000. Without Supabase environment variables the app runs 
 ## Connect your private cloud workspace
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/001_workspace.sql` once in its SQL editor.
+2. Run `supabase/migrations/001_workspace.sql`, then `supabase/migrations/002_objective_progress.sql`, once each in its SQL editor, in that order.
 3. In Authentication settings, disable public signups. Create your own email/password user through the Supabase dashboard. Use a strong unique password. Password recovery can be handled through the dashboard for this personal MVP.
 4. Copy that user's UUID and run this administrative SQL (replace the placeholder):
 
@@ -40,7 +40,8 @@ Push this folder to your GitHub repository, import it into Vercel as a Next.js p
 ## Use
 
 - The centre is the current objective, not a duplicate node. Click a surrounding objective to open its own grid, and an empty cell to create one.
-- Edit any objective with its three-dot menu; edit the centre with “Edit objective”. Choose a grid position to swap it with an occupied cell. Completion is independent for each objective.
+- Edit any objective with its three-dot menu; edit the centre with “Edit objective”. Choose a grid position to swap it with an occupied cell. Status is independent for each objective: Not started, In progress, Blocked or Complete. Only Complete counts toward the grid's completion total.
+- The editor also stores an optional deliverable, multiline completion criteria and next action, alongside the existing description. These fields are available at every level and remain in the editor. Cancel discards the edit; Save changes commits the draft to the autosave queue.
 - Create separate roots with “New Mandala”. Use breadcrumbs, Back to parent, or the hierarchy explorer to navigate. Search covers titles and descriptions across all roots and depths.
 - Changes queue automatically and save approximately every 1.5 seconds. “Saved to cloud” confirms the database accepted the change. Unsaved changes trigger a leave-page warning and keep a recovery draft.
 - Export downloads all roots, descendants, descriptions, completion states and timestamps as a versioned flat JSON backup. A flat model avoids JSON nesting limits. Import validates the hierarchy and adds copies with fresh IDs, preserving metadata and existing work. Import files are limited to 10 MB as a browser safeguard; nesting depth has no fixed limit.
@@ -65,3 +66,9 @@ npx playwright test
 Model tests cover 12,000 nested levels, import ID remapping, metadata preservation and invalid structures. Local Postgres tests execute the actual migration and verify ownership, stale revisions, invalid snapshots and transactional rollback. Browser tests cover navigation, editing, reorder, search, local persistence, import/export, completion, deletion and responsive layout. You may use an installed Edge browser instead of downloading Chromium by setting `PLAYWRIGHT_CHANNEL=msedge`. Cloud authentication and two-device database behavior additionally require a real Supabase project; follow `tests/CLOUD-CHECKLIST.md` before considering deployment verified.
 
 Free hosting tiers may cover personal usage but provider quotas and pricing determine actual cost.
+
+## Upgrade an existing cloud workspace to progress tracking
+
+Export a JSON backup first. Apply **only** `supabase/migrations/002_objective_progress.sql` in the Supabase SQL editor before deploying this version. Do not rerun 001 on an existing database. This transaction adds the progress columns and updates the RPCs, maps completed objectives to Complete and all others to Not started, preserves descriptions/positions/timestamps, and increments existing workspace revisions to reject stale saves. The old completed database column remains a derived compatibility mirror; status drives the UI and all completion counts. Older app clients must refresh before saving. The new app refuses to edit an unmigrated cloud database rather than silently lose progress fields.
+
+Local data, recovery drafts and imported version-1 backups upgrade automatically on read (including missing completed flags). New exports use backup version 2 and preserve all progress fields. They are not intended for older app versions. Existing recovery drafts from before the database revision change can still be downloaded and imported as copies.

@@ -38,3 +38,6 @@ html[data-theme=dark] .status-complete{background:#2f4935;color:#b4ddbc}
 @media(max-width:760px){.objective-status{font-size:8px;padding:3px 4px;gap:4px}.cell{min-height:180px}.title-row>.button{display:inline-flex;margin-top:0}.title-row{flex-wrap:wrap}.editor{padding-bottom:0}.editor-actions .button{padding:10px 11px}}
 
 .editor .expanding-textarea{display:block;min-height:44px;max-height:320px;resize:vertical;overflow-y:auto;overflow-wrap:anywhere;line-height:1.6;white-space:pre-wrap}
+
+.consent-card{max-width:560px;width:100%}.consent-card small{display:block;overflow-wrap:anywhere;line-height:1.8}.consent-card a{color:var(--ink);text-decoration:underline;font-size:12px}.consent-card .checkbox{font-size:13px;line-height:1.7}.connection-actions{display:flex;justify-content:flex-end;gap:10px;margin:25px 0}.connection-endpoint{overflow-wrap:anywhere}.connection-endpoint code{font-size:12px}.connections-list{list-style:none;padding:0}.connections-list li{border-top:1px solid var(--line);padding:18px 0}.connections-list .button{margin-top:10px}
+@media(max-width:760px){.consent-card{padding:28px}.consent-card h1{font-size:29px}}

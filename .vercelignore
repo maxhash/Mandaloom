@@ -6,3 +6,5 @@ node_modules
 test-results
 tests
 *.tsbuildinfo
+artifacts
+plugin

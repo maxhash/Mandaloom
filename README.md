@@ -67,6 +67,10 @@ Model tests cover 12,000 nested levels, import ID remapping, metadata preservati
 
 Free hosting tiers may cover personal usage but provider quotas and pricing determine actual cost.
 
+## Private ChatGPT plugin
+
+Mandaloom includes an authenticated MCP endpoint for reading grids, creating objectives, editing progress fields and batch-populating empty cells. It uses the existing Supabase login with explicit owner consent, revocable read/edit grants and idempotent revision-checked writes. See [private plugin setup](docs/PRIVATE-PLUGIN.md) before connecting. Apply migration 003 and configure the native Supabase OAuth server and token hook; no service-role key or OpenAI API key is needed. The source package is in `plugin/mandaloom/`. These optional features do not change normal grid editing.
+
 ## Upgrade an existing cloud workspace to progress tracking
 
 Export a JSON backup first. Apply **only** `supabase/migrations/002_objective_progress.sql` in the Supabase SQL editor before deploying this version. Do not rerun 001 on an existing database. This transaction adds the progress columns and updates the RPCs, maps completed objectives to Complete and all others to Not started, preserves descriptions/positions/timestamps, and increments existing workspace revisions to reject stale saves. The old completed database column remains a derived compatibility mirror; status drives the UI and all completion counts. Older app clients must refresh before saving. The new app refuses to edit an unmigrated cloud database rather than silently lose progress fields.

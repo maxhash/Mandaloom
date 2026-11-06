@@ -1,0 +1,2 @@
+import { authorizationServer, MCP_RESOURCE, APP_ORIGIN } from '@/lib/mcp/config';
+export function GET(){return Response.json({resource:MCP_RESOURCE,authorization_servers:[authorizationServer()],scopes_supported:['openid','profile','email'],bearer_methods_supported:['header'],resource_name:'Mandaloom private workspace',resource_documentation:`${APP_ORIGIN}/connections`},{headers:{'Cache-Control':'no-store','Access-Control-Allow-Origin':'*'}});}

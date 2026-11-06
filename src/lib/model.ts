@@ -1,9 +1,12 @@
+export const priorities = ['Normal', 'High', 'Low'] as const;
+export function validDueDate(value:unknown):value is string {if(typeof value!=='string')return false;if(value==='')return true;if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||value.startsWith('0000'))return false;const date=new Date(value+'T00:00:00Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;}
+export function dueLabel(date:string,status:ObjectiveStatus,now=new Date()){const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');return status!=='Complete'&&date<=today?(date===today?'Due today':'Overdue'):'Due '+date;}
 export const statuses = ['Not started', 'In progress', 'Blocked', 'Complete'] as const;
 export type ObjectiveStatus = typeof statuses[number];
-export type Objective = { id: string; parentId: string | null; rootId: string; position: number; title: string; description: string; deliverable: string; completionCriteria: string; status: ObjectiveStatus; nextAction: string; createdAt: string; updatedAt: string; referenceNumber?:number; nextChildNumber?:number };
+export type Objective = { id: string; parentId: string | null; rootId: string; position: number; title: string; description: string; deliverable: string; completionCriteria: string; status: ObjectiveStatus; nextAction: string; dueDate: string; priority: typeof priorities[number]; createdAt: string; updatedAt: string; referenceNumber?:number; nextChildNumber?:number };
 export type Backup = { format: 'mandaloom'; version: 3; nodes: Objective[]; nextRootNumber:number };
 export const positions = [0,1,2,3,5,6,7,8];
-export function makeNode(title: string, parent?: Objective, position = 4): Objective { const id = crypto.randomUUID(), now = new Date().toISOString(); return { id, parentId: parent?.id ?? null, rootId: parent?.rootId ?? id, position, title, description: '', deliverable: '', completionCriteria: '', status: 'Not started', nextAction: '', createdAt: now, updatedAt: now }; }
+export function makeNode(title: string, parent?: Objective, position = 4): Objective { const id = crypto.randomUUID(), now = new Date().toISOString(); return { id, parentId: parent?.id ?? null, rootId: parent?.rootId ?? id, position, title, description: '', deliverable: '', completionCriteria: '', status: 'Not started', nextAction: '', dueDate: '', priority: 'Normal', createdAt: now, updatedAt: now }; }
 export function seed(): Objective[] { const root = makeNode('Establish and Operate a Profitable Proprietary Trading Firm'); root.description = 'Build a durable trading business through disciplined research, controlled risk and consistent execution.'; return [root, ...['Trading Strategy','Research & Analytics','Risk Management','Capital & Funding','Legal & Compliance','Technology & Data','Operations','Performance & Growth'].map((title,i) => makeNode(title,root,positions[i]))]; }
 export function descendants(nodes: Objective[], id: string): Set<string> { const children = new Map<string,Objective[]>(); for (const n of nodes) if(n.parentId) children.set(n.parentId,[...(children.get(n.parentId) ?? []),n]); const found = new Set<string>(), queue = [id]; while(queue.length) { const x = queue.pop()!; if(found.has(x)) continue; found.add(x); for(const n of children.get(x) ?? []) queue.push(n.id); } return found; }
 export function trail(nodes: Objective[], id: string): Objective[] { const map = new Map(nodes.map(n=>[n.id,n])), result: Objective[] = [], seen = new Set<string>(); let n = map.get(id); while(n && !seen.has(n.id)) { result.push(n); seen.add(n.id); n = n.parentId ? map.get(n.parentId) : undefined; } return result.reverse(); }
@@ -74,8 +77,10 @@ export function parseBackup(value: unknown): Objective[] {
   for(const [field,limit] of [['deliverable',1000],['completionCriteria',20000],['nextAction',1000]] as const) {
    if(n[field] !== undefined && (typeof n[field] !== 'string' || n[field].length > limit)) throw Error(`Invalid ${field}.`);
   }
+  if(n.dueDate!==undefined && !validDueDate(n.dueDate))throw Error('Invalid due date.');
+  if(n.priority!==undefined && !priorities.includes(n.priority))throw Error('Invalid priority.');
   const {completed, ...rest} = n;
-  return {...rest, status:n.status ?? (completed === true ? 'Complete' : 'Not started'), deliverable:n.deliverable ?? '', completionCriteria:n.completionCriteria ?? '', nextAction:n.nextAction ?? ''} as Objective;
+  return {...rest, status:n.status ?? (completed === true ? 'Complete' : 'Not started'), deliverable:n.deliverable ?? '', completionCriteria:n.completionCriteria ?? '', nextAction:n.nextAction ?? '', dueDate:n.dueDate ?? '', priority:n.priority ?? 'Normal'} as Objective;
  })};
  const map = new Map<string,Objective>(), slots = new Set<string>(), references=new Set<string>();
  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

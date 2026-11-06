@@ -1,14 +1,15 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { assignReferences, backup, descendants, hierarchyRows, makeNode, parseBackup, positions, referenceLookup, statuses, trail, type Objective } from '../model';
+import { assignReferences, backup, descendants, hierarchyRows, makeNode, parseBackup, positions, referenceLookup, statuses, priorities, validDueDate, trail, type Objective } from '../model';
 
 const fields = {
  title:z.string().trim().min(1).max(300), description:z.string().max(20000),
  deliverable:z.string().max(1000), completionCriteria:z.string().max(20000),
+ dueDate:z.string().refine(validDueDate,'Use a real YYYY-MM-DD date or empty string to clear.'), priority:z.enum(priorities),
  status:z.enum(statuses), nextAction:z.string().max(1000),
 };
 const optionalFields = z.object(fields).partial().strict();
-const newFields = z.object({...fields, description:fields.description.optional(), deliverable:fields.deliverable.optional(), completionCriteria:fields.completionCriteria.optional(), status:fields.status.optional(), nextAction:fields.nextAction.optional()}).strict();
+const newFields = z.object({...fields, dueDate:fields.dueDate.optional(), priority:fields.priority.optional(), description:fields.description.optional(), deliverable:fields.deliverable.optional(), completionCriteria:fields.completionCriteria.optional(), status:fields.status.optional(), nextAction:fields.nextAction.optional()}).strict();
 const id = z.string().uuid();
 const position = z.number().int().refine(p=>positions.includes(p),'Position must be 0, 1, 2, 3, 5, 6, 7 or 8; 4 is the centre.');
 const mutation = { expectedRevision:z.number().int().nonnegative().describe('Exact revision from a recent read; conflicts require re-reading and reviewing the changes.'), requestId:id.describe('Generate one UUID for this operation; reuse it unchanged if retrying the exact same request.') };
@@ -24,7 +25,7 @@ export const toolSpecs = {
  populate_grid:{ title:'Populate empty grid cells', description:'Atomically create up to eight supporting objectives in explicitly chosen empty cells under one known parent. Rejects the whole batch if any cell is occupied or repeated. Preserves all existing content. Read the grid first and use its revision.', write:true, schema:z.object({...mutation,parentId:id,objectives:z.array(z.object({position,fields:newFields}).strict()).min(1).max(8)}).strict() },
 } as const;
 export type ToolName = keyof typeof toolSpecs;
-export type Snapshot = {schemaVersion:number; revision:number; nodes:Objective[]; nextRootNumber?:number;referenceVersion?:number};
+export type Snapshot = {schemaVersion:number; revision:number; nodes:Objective[]; nextRootNumber?:number;planningVersion?:number;referenceVersion?:number};
 export type Connection = {ownerId:string;permissions:string[]};
 export interface WorkspaceRepository {
  connection:Connection;
@@ -35,7 +36,7 @@ export interface WorkspaceRepository {
 export class WorkspaceError extends Error {
  constructor(public code:string,message:string){super(message);}
 }
-function summary(n:Objective){return {id:n.id,parentId:n.parentId,rootId:n.rootId,position:n.position,title:n.title,status:n.status};}
+function summary(n:Objective){return {id:n.id,parentId:n.parentId,rootId:n.rootId,position:n.position,title:n.title,status:n.status,dueDate:n.dueDate,priority:n.priority};}
 function breadcrumbs(nodes:Objective[],nodeId:string){const references=referenceLookup(nodes);return trail(nodes,nodeId).map(n=>({id:n.id,title:n.title,...references(n.id)}));}
 function requireNode(nodes:Objective[],nodeId:string){const node=nodes.find(n=>n.id===nodeId);if(!node)throw new WorkspaceError('NOT_FOUND','Objective not found in this workspace.');return node;}
 

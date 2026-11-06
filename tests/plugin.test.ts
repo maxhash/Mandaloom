@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {makeNode,seed,type Objective} from '../src/lib/model';
+import {assignReferences,makeNode,seed,type Objective} from '../src/lib/model';
 import {executeTool,type Snapshot,type WorkspaceRepository} from '../src/lib/mcp/tools';
 import {checkPluginClaims,AuthenticationError} from '../src/lib/mcp/repository';
 import {authorizationServer,MCP_RESOURCE} from '../src/lib/mcp/config';
@@ -9,6 +9,7 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 function repository(nodes=seed()):WorkspaceRepository & {snapshot:Snapshot} {
+ nodes=assignReferences(nodes).nodes;
  const receipts=new Map<string,{fingerprint:string;result:Record<string,unknown>}>();
  const repo={connection:{ownerId:crypto.randomUUID(),permissions:['read','write']},snapshot:{schemaVersion:2,revision:4,nodes},
   async load(){return structuredClone(repo.snapshot);},
@@ -24,8 +25,10 @@ test('OAuth discovery normalizes pasted environment values before forming the is
 test('plugin fills only empty cells atomically and edits nested objectives without changing hierarchy',async()=>{
  const repo=repository();const parent=repo.snapshot.nodes[1];const original=structuredClone(repo.snapshot.nodes);
  const result=await executeTool('populate_grid',{expectedRevision:4,requestId:crypto.randomUUID(),parentId:parent.id,objectives:[{position:0,fields:{title:'Approach',deliverable:'Report'}},{position:1,fields:{title:'Research',status:'In progress'}}]},repo);
- assert.equal(result.revision,5);assert.deepEqual(repo.snapshot.nodes.slice(0,9),original);
+ assert.equal(result.revision,5);assert.deepEqual(repo.snapshot.nodes.slice(0,9).map(({nextChildNumber,...n})=>n),original.map(({nextChildNumber,...n})=>n));
  const child=repo.snapshot.nodes[9];assert.equal(child.parentId,parent.id);assert.equal(child.rootId,parent.rootId);assert.equal(child.status,'Not started');
+ assert.equal((result.objectives as {fullReference:string}[])[0].fullReference,'M001/R.1.1');
+ const located=await executeTool('search_objectives',{query:'M001/R.1.1'},repo);assert.equal(located.total,1);
  await executeTool('create_objective',{expectedRevision:5,requestId:crypto.randomUUID(),parentId:child.id,position:0,fields:{title:'Task'}},repo);
  const descendant=repo.snapshot.nodes.at(-1)!;
  await executeTool('update_objective',{expectedRevision:6,requestId:crypto.randomUUID(),nodeId:child.id,fields:{title:'Updated approach',completionCriteria:'Reviewed\nApproved',nextAction:'Run research',status:'Blocked'}},repo);

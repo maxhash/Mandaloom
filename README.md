@@ -18,7 +18,7 @@ Open http://localhost:3000. Without Supabase environment variables the app runs 
 ## Connect your private cloud workspace
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/001_workspace.sql`, then `supabase/migrations/002_objective_progress.sql`, once each in its SQL editor, in that order.
+2. Run the SQL files in `supabase/migrations/` once each, in numerical order (001–004).
 3. In Authentication settings, disable public signups. Create your own email/password user through the Supabase dashboard. Use a strong unique password. Password recovery can be handled through the dashboard for this personal MVP.
 4. Copy that user's UUID and run this administrative SQL (replace the placeholder):
 
@@ -75,4 +75,16 @@ Mandaloom includes an authenticated MCP endpoint for reading grids, creating obj
 
 Export a JSON backup first. Apply **only** `supabase/migrations/002_objective_progress.sql` in the Supabase SQL editor before deploying this version. Do not rerun 001 on an existing database. This transaction adds the progress columns and updates the RPCs, maps completed objectives to Complete and all others to Not started, preserves descriptions/positions/timestamps, and increments existing workspace revisions to reject stale saves. The old completed database column remains a derived compatibility mirror; status drives the UI and all completion counts. Older app clients must refresh before saving. The new app refuses to edit an unmigrated cloud database rather than silently lose progress fields.
 
-Local data, recovery drafts and imported version-1 backups upgrade automatically on read (including missing completed flags). New exports use backup version 2 and preserve all progress fields. They are not intended for older app versions. Existing recovery drafts from before the database revision change can still be downloaded and imported as copies.
+Local data, recovery drafts and imported version-1 backups upgrade automatically on read (including missing completed flags). Current exports use backup version 3 and preserve all progress fields and reference counters. They are not intended for older app versions. Existing recovery drafts from before the database revision change can still be downloaded and imported as copies.
+
+## Grid references
+
+Each objective/grid has a short nesting reference: `R` for a root, `R.1` for a supporting objective, `R.1.1` for its child. The full reference adds its Mandala number: `M001/R.1.1`. These references are unique within your workspace; internal UUIDs remain the permanent database identity. Each extra segment is one level deeper. The centre uses the current objective's reference, not a duplicate.
+
+Numbers are assigned in initial grid order, then sequentially as new objectives are saved. They are independent of grid positions: swapping cards does not rename their references. Deleted child numbers are not reused because their parent's next-number counter is retained. The workspace's root counter likewise survives deleting every root. Cancelling a new objective does not consume a number. Consequently a new objective in the first grid cell may have a later number such as `R.9` after previous children were deleted.
+
+References are shown on cards, in the hierarchy and editor, and above the active grid. Copy reference copies the full unique form. Search accepts short or full references. Plugin reads and mutation results include `reference`, `fullReference` and `depth`; use search to resolve a full reference to an objective UUID before editing.
+
+For an existing cloud workspace, export a backup and apply **only** `supabase/migrations/004_grid_references.sql` after 003 before deploying this update. The migration preserves objective content, identities, timestamps, nesting, positions and completion states. It assigns existing numbers and increments revisions to reject stale saves. Browser/plugin save functions enforce immutable existing numbers and monotonically increasing counters. Old clients that omit the new fields cannot reset stored numbers. The updated application requires this migration to edit cloud data.
+
+Local storage, recovery drafts and older JSON backups are upgraded on read. Version-3 exports include node numbers, per-parent counters and the workspace root counter. Import is additive: copies receive new root prefixes to avoid collisions, while child reference segments and deletion gaps are preserved. No cross-parent move is supported in the current editor or plugin; if introduced later, that operation will need an explicit reference-change policy.

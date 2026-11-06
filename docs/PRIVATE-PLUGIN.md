@@ -25,6 +25,8 @@ At `/connections` you can revoke access immediately. This removes the live datab
 
 ## Tools
 
+After reference migration 004, reads and write results also include short grid references (`R.1.1`), globally unique workspace references (`M001/R.1.1`) and depth. Search accepts reference text. Resolve it to the returned exact objective ID before editing. Cell swaps preserve references. The plugin server and browser use the same numbering/counter logic; apply 004 before deploying the reference-enabled app.
+
 | Tool | Behavior |
 | --- | --- |
 | get_connection | Stable owner ID, data permissions, revision |

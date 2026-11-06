@@ -29,12 +29,25 @@ test('new descendants appear under their parent in the explorer after creation a
  await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
  await page.getByRole('button',{name:'Add objective'}).first().click();await page.getByLabel('Title',{exact:true}).fill('Trading Approach');await page.getByRole('button',{name:'Save changes'}).click();
  const rows=page.locator('.tree-list .tree-node');
- await expect(rows.nth(1)).toHaveText('Trading Strategy');await expect(rows.nth(2)).toHaveText('Trading Approach');await expect(rows.nth(3)).toHaveText('Research & Analytics');
+ await expect(rows.nth(1)).toContainText('Trading Strategy');await expect(rows.nth(2)).toContainText('Trading Approach');await expect(rows.nth(3)).toContainText('Research & Analytics');
  expect(await rows.nth(2).evaluate(el=>parseInt(getComputedStyle(el).paddingLeft))).toBeGreaterThan(await rows.nth(1).evaluate(el=>parseInt(getComputedStyle(el).paddingLeft)));
  await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));await page.reload();
- await expect(rows.nth(2)).toHaveText('Trading Approach');await rows.nth(2).click();await expect(page.getByRole('heading',{name:'Trading Approach',level:1})).toBeVisible();
+ await expect(rows.nth(2)).toContainText('Trading Approach');await rows.nth(2).click();await expect(page.getByRole('heading',{name:'Trading Approach',level:1})).toBeVisible();
  await expect(page.locator('.breadcrumbs')).toContainText('Trading Strategy');
- await page.getByLabel('Search objectives').fill('Trading Approach');await expect(rows).toHaveCount(3);await expect(rows.nth(1)).toHaveText('Trading Strategy');await expect(rows.nth(2)).toHaveText('Trading Approach');
+ await page.getByLabel('Search objectives').fill('Trading Approach');await expect(rows).toHaveCount(3);await expect(rows.nth(1)).toContainText('Trading Strategy');await expect(rows.nth(2)).toContainText('Trading Approach');
+});
+test('grid references show nesting, copy uniquely and survive swapping, deletion and reload',async({page,context})=>{
+ await context.grantPermissions(['clipboard-read','clipboard-write']);
+ await page.goto('/');await expect(page.locator('.grid-reference')).toHaveText('M001/R');
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();await expect(page.locator('.grid-reference')).toHaveText('M001/R.1');
+ await page.getByRole('button',{name:'Add objective'}).first().click();await page.getByLabel('Title',{exact:true}).fill('Referenced approach');await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.cell-number').filter({hasText:'R.1.1'})).toBeVisible();
+ await page.getByRole('button',{name:'Edit Referenced approach',exact:true}).click();await expect(page.locator('.editor-reference')).toHaveText('M001/R.1.1');await page.getByLabel('Grid position').selectOption('8');await page.getByRole('button',{name:'Save changes'}).click();
+ await expect(page.locator('.mandala-grid > :nth-child(9) .cell-number')).toHaveText('R.1.1');
+ await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Referenced approach',exact:true})}).click();await expect(page.locator('.grid-reference')).toHaveText('M001/R.1.1');await page.getByRole('button',{name:'Copy reference',exact:true}).click();expect(await page.evaluate(()=>navigator.clipboard.readText())).toBe('M001/R.1.1');
+ await page.getByRole('button',{name:'Back to parent'}).click();await page.getByRole('button',{name:'Edit Referenced approach',exact:true}).click();page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete',exact:true}).click();
+ await page.getByRole('button',{name:'Add objective'}).first().click();await page.getByLabel('Title',{exact:true}).fill('Replacement');await page.getByRole('button',{name:'Save changes'}).click();await expect(page.locator('.mandala-grid > :nth-child(1) .cell-number')).toHaveText('R.1.2');
+ await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo')&&!!localStorage.getItem('mandaloom-demo'));await page.reload();await page.getByLabel('Search objectives').fill('M001/R.1.2');await page.locator('.results button').click();await expect(page.locator('.grid-reference')).toHaveText('M001/R.1.2');
 });
 test('progress fields persist at root and nested levels, cancel is isolated and mobile actions remain accessible',async({page})=>{
  await page.setViewportSize({width:390,height:740});

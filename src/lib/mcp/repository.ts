@@ -27,5 +27,5 @@ export async function authenticatedRepository(authorization:string|null):Promise
   }
   return data;
  };
- return {connection,load:()=>rpc('mandaloom_plugin_load') as Promise<Snapshot>,receipt:(requestId,fingerprint)=>rpc('mandaloom_plugin_receipt',{operation_id:requestId,operation_fingerprint:fingerprint}),commit:(revision,nodes,requestId,fingerprint,result)=>rpc('mandaloom_plugin_commit',{expected_revision:revision,payload:nodes,operation_id:requestId,operation_fingerprint:fingerprint,operation_result:result})};
+ return {connection,load:async()=>{const snapshot=await rpc('mandaloom_plugin_load') as Snapshot;if(snapshot.referenceVersion!==1)throw Error('Grid reference setup is incomplete. Apply 004_grid_references.sql in Supabase.');return snapshot;},receipt:(requestId,fingerprint)=>rpc('mandaloom_plugin_receipt',{operation_id:requestId,operation_fingerprint:fingerprint}),commit:(revision,nodes,requestId,fingerprint,result)=>rpc('mandaloom_plugin_commit',{expected_revision:revision,payload:nodes,operation_id:requestId,operation_fingerprint:fingerprint,operation_result:result})};
 }

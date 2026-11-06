@@ -55,3 +55,7 @@ New objectives default to Not started. All editor fields and their existing limi
 - Revoke the plugin connection and verify subsequent reads and writes fail even with an unexpired old token.
 
 The automated tests use synthetic workspaces and local Postgres, not the owner's live objectives. Real OAuth consent and tool invocation require the user's login and these dashboard settings; a successful deployment or plugin upload alone does not prove that final linking succeeded.
+
+### Priority and due-date tools (0.1.2)
+
+The live create_objective, update_objective and populate_grid schemas accept fields.priority (Normal, High, Low) and fields.dueDate (YYYY-MM-DD, or empty string to clear). Omitted values on updates are preserved. The instruction package 0.1.2 documents this behavior and stale connection metadata. After a server schema change, refresh Mandaloom connection from its ChatGPT plugin detail page, then open a new chat; updating the instruction package alone does not refresh cached tool schemas. Keep the registered app binding unchanged. Verified live public tools/list exposes both fields in all three mutation tools; authenticated host writes still require refreshed descriptors.

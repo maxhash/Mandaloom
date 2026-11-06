@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "mandaloom",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Read and populate private recursive Mandala grids, and edit objective progress fields through your Mandaloom account.",
   "author": {
     "name": "maxhash"

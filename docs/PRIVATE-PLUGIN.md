@@ -2,6 +2,8 @@
 
 The endpoint is `https://mandaloom.vercel.app/mcp` (stateless MCP Streamable HTTP). It uses the official TypeScript MCP SDK and the existing Vercel/Supabase deployment. It does not call an OpenAI model or require an OpenAI API key. ChatGPT supplies the reasoning and calls these tools.
 
+The private plugin is saved to the owner's account: [Mandaloom](https://chatgpt.com/plugins/plugins_6aee40d83ff4819180225579be24078d). Plugin ID: `plugins_6aee40d83ff4819180225579be24078d`. Initial release ID: `pluginrel_6aee40d9b870819196a7c18531c6d1c8`. Reuse this identity for future updates; do not create duplicate plugins. Installation and OAuth connection are separate from creation.
+
 ## One-time Supabase setup
 
 1. Apply `supabase/migrations/003_private_plugin.sql` in the Supabase SQL editor **after 001 and 002**. This preserves objectives and adds connection grants, idempotency receipts and protected RPCs. Do not rerun earlier migrations.

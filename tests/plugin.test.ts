@@ -80,3 +80,5 @@ test('official MCP client completes initialization, discovery and a round-trip w
   const roots=await client.callTool({name:'list_mandalas',arguments:{}});assert.equal((roots.structuredContent as {mandalas:unknown[]}).mandalas.length,2);
  }finally{await client.close();}
 });
+
+test('plugin grid, root, breadcrumb and mutation results include permanent browser links',async()=>{const repo=repository();const root=repo.snapshot.nodes[0];const roots=await executeTool('list_mandalas',{},repo);assert.equal((roots.mandalas as {url:string}[])[0].url,'https://mandaloom.vercel.app/?grid='+root.id);const grid=await executeTool('get_grid',{nodeId:root.id},repo);assert.equal((grid.centre as {url:string}).url,(roots.mandalas as {url:string}[])[0].url);assert.equal((grid.path as {url:string}[])[0].url,(grid.centre as {url:string}).url);const created=await executeTool('create_objective',{expectedRevision:4,requestId:crypto.randomUUID(),parentId:null,fields:{title:'Linked root'}},repo);const n=(created.objectives as {id:string;url:string}[])[0];assert.equal(n.url,'https://mandaloom.vercel.app/?grid='+n.id);});

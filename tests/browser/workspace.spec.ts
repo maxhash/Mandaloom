@@ -16,6 +16,7 @@ test('recursive workflow, reordering, search and persistence',async({page})=>{
  await expect(page.locator('.mandala-grid > :nth-child(9)')).toContainText('Repeatable edge');
  await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));
  await page.reload();
+ await expect(page.getByRole('heading',{name:'Trading Strategy',level:1})).toBeVisible();
  await page.getByLabel('Search objectives').fill('Repeatable');
  await page.locator('.results button').click();
  await expect(page.getByRole('heading',{name:'Repeatable edge',level:1})).toBeVisible();
@@ -82,7 +83,7 @@ test('progress fields persist at root and nested levels, cancel is isolated and 
  await expect(page.locator('.objective-status.status-blocked')).toHaveText('Blocked');
  await page.getByRole('button',{name:'Edit Nested progress',exact:true}).click();await edit.getByLabel('Status',{exact:true}).selectOption('Complete');await edit.getByRole('button',{name:'Save changes'}).click();await expect(page.locator('.grid-toolbar')).toContainText('1 of 1 complete');
  await page.waitForFunction(()=>!localStorage.getItem('mandaloom-draft-demo') && !!localStorage.getItem('mandaloom-demo'));await page.reload();
- await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();await page.getByRole('button',{name:'Edit Nested progress',exact:true}).click();await expect(edit.getByLabel('Deliverable',{exact:true})).toHaveValue('Nested report');await expect(edit.getByLabel('Completion criteria',{exact:true})).toHaveValue('Results reviewed');await expect(edit.getByLabel('Next action',{exact:true})).toHaveValue('Run research');await expect(edit.getByLabel('Status',{exact:true})).toHaveValue('Complete');
+ await expect(page.getByRole('heading',{name:'Trading Strategy',level:1})).toBeVisible();await page.getByRole('button',{name:'Edit Nested progress',exact:true}).click();await expect(edit.getByLabel('Deliverable',{exact:true})).toHaveValue('Nested report');await expect(edit.getByLabel('Completion criteria',{exact:true})).toHaveValue('Results reviewed');await expect(edit.getByLabel('Next action',{exact:true})).toHaveValue('Run research');await expect(edit.getByLabel('Status',{exact:true})).toHaveValue('Complete');
 });
 test('legacy browser objectives retain their completion indicators and content',async({page})=>{
  const legacy=seed().map(({status,deliverable,completionCriteria,nextAction,...n},i)=>({...n,...(i===2?{}:{completed:i===1})}));

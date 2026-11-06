@@ -104,3 +104,11 @@ Backspace opens the current grid's parent. It does nothing at a root, while an e
 ## Long text editing
 
 All objective text fields grow with their content without inner scrollbars. Expand opens a larger modal editor with regular-weight text, character count, keyboard focus containment, Escape/Cancel to discard that field draft, and Done to return it to the objective editor. Save changes is still required to persist the objective; cancelling the objective discards all draft edits. Completion criteria supports an explicit Make checklist action in expanded mode: each non-empty line becomes an unchecked text item, existing checklist markers and blank lines remain intact. Separate milestones with blank lines; existing content is never rewritten automatically or converted into child objectives. Paragraphs and line breaks survive saving, reload and JSON export.
+
+## Live cloud updates
+
+Open grids follow committed MCP and other-browser changes automatically, preserving the current readable URL and search. Apply supabase/migrations/006_live_updates.sql after 005 for Supabase push notifications. Only owner-scoped revision metadata is published; objective text still loads through the existing private RPC. No objective/workspace table read grants are added. Browser-owner RLS excludes other users and OAuth client tokens. Failed transactions emit no committed update.
+
+A five-second foreground fallback plus focus/online checks catches missed notifications; without 006 it temporarily uses the existing load RPC. With 006, unchanged revisions use a small revision RPC and skip downloading objectives. Open editors defer incoming snapshots. Cancelling a clean edit applies waiting updates; saving a draft against an externally changed workspace keeps the local recovery draft and shows the existing export/reload conflict workflow. Local demo mode remains local. Realtime subscriptions, timers and listeners are removed on sign-out/unmount. Updates appear after each committed tool operation, not token-by-token while ChatGPT is composing text.
+
+Validation: npm test; PLAYWRIGHT_CHANNEL=msedge npx playwright test; PLAYWRIGHT_CHANNEL=msedge npx playwright test --config playwright.live.config.ts (mocked authenticated HTTP/WebSocket service; no production credentials or data).

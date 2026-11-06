@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'./tests/live-browser',use:{channel:process.env.PLAYWRIGHT_CHANNEL,baseURL:'http://localhost:3100'},webServer:{command:'npm run dev -- --port 3100',url:'http://localhost:3100',reuseExistingServer:false,env:{NEXT_PUBLIC_SUPABASE_URL:'https://mandaloom-test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-publishable-key'}},workers:1});

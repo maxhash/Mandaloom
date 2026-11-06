@@ -1,4 +1,5 @@
 'use client';
+import {createLiveSync} from '@/lib/live-sync';
 import {gridHref,resolveGrid} from '@/lib/navigation';
 import {priorities,dueLabel} from '@/lib/model';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -13,13 +14,16 @@ export default function Workspace() {
  const [locationNotice,setLocationNotice]=useState(''),[copiedLink,setCopiedLink]=useState('');
  const selectGrid=(id:string,replace=false,preserveNotice=false,available=latest.current)=>{const href=gridHref(id,available);if(window.location.pathname+window.location.search!==href)window.history[replace?'replaceState':'pushState'](null,'',href);setCurrent(id);setQuery('');setEditor(null);if(!preserveNotice)setLocationNotice('');};
  const restoreLocation=(available:Objective[])=>{const resolved=resolveGrid(available,window.location.pathname,window.location.search);selectGrid(resolved.id,true,true,available);if(resolved.missing)setLocationNotice('This grid is unavailable or was deleted. Showing an available Mandala.');};
+ const [liveMessage,setLiveMessage]=useState('Auto-updating'),[remotePending,setRemotePending]=useState(false);
+ const liveView=useRef({editor,current});liveView.current={editor,current};
+ const liveSync=useRef<ReturnType<typeof createLiveSync>|null>(null);
  const nextRootNumber=useRef(1);
  const [copiedReference,setCopiedReference]=useState('');
  const revision=useRef(0), generation=useRef(0), saved=useRef(0), saving=useRef(false), conflict=useRef(false), file=useRef<HTMLInputElement>(null), latest=useRef(nodes), owner=useRef(user);
  latest.current=nodes; owner.current=user;
  const localKey = `mandaloom-draft-${user ?? 'demo'}`;
  const load = async (uid: string|null) => {
-  setReady(false); conflict.current=false; generation.current=0; saved.current=0; setError('');
+  setReady(false);setRemotePending(false); conflict.current=false; generation.current=0; saved.current=0; setError('');
   try {
    let loaded: Objective[];
    if(supabase && uid) {
@@ -48,6 +52,30 @@ export default function Workspace() {
  // Resolve against the current loaded snapshot, including recently created/deleted nodes.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[ready]);
+ useEffect(()=>{
+  const client=supabase;if(!client||!user||!ready)return;
+  let active=true,revisionRpc=true,connected=false;
+  const sync=createLiveSync({
+   read:async()=>{
+    if(revisionRpc){const result=await client.rpc('mandaloom_workspace_revision');if(result.error){if(result.error.code==='PGRST202'||result.error.code==='42883')revisionRpc=false;else throw result.error;}else {if(active)setLiveMessage(connected?'Live updates':'Auto-updating');if(Number(result.data)<=revision.current)return null;}}
+    const {data,error}=await client.rpc('load_workspace');if(error)throw error;
+    if(data.planningVersion!==1||data.referenceVersion!==1)throw Error('Database update required.');
+    if(active)setLiveMessage(connected?'Live updates':'Auto-updating');return data;
+   },
+   state:()=>({revision:revision.current,dirty:generation.current!==saved.current||conflict.current,editing:!!liveView.current.editor,saving:saving.current}),
+   apply:snapshot=>{const assigned=assignReferences(parseBackup(backup(snapshot.nodes)),snapshot.nextRootNumber??1);revision.current=snapshot.revision;nextRootNumber.current=assigned.nextRootNumber;latest.current=assigned.nodes;setNodes(assigned.nodes);setRemotePending(false);setLiveMessage('Live updates');setStatus('Saved to cloud');if(!assigned.nodes.some(n=>n.id===liveView.current.current))restoreLocation(assigned.nodes);},
+   defer:dirty=>{setRemotePending(true);if(dirty){conflict.current=true;setError('Cloud changes arrived while you had unsaved edits. Your local recovery draft is kept. Download recovery before reloading cloud.');setStatus('Not saved — cloud changed');}},
+   error:()=>setLiveMessage('Reconnecting…')
+  });
+  liveSync.current=sync;
+  const refresh=()=>{if(document.visibilityState!=='hidden')void sync.refresh();};
+  const channel=client.channel('workspace-updates-'+user).on('postgres_changes',{event:'UPDATE',schema:'public',table:'mandaloom_workspace_events',filter:'user_id=eq.'+user},()=>refresh()).on('postgres_changes',{event:'INSERT',schema:'public',table:'mandaloom_workspace_events',filter:'user_id=eq.'+user},()=>refresh()).subscribe(state=>{if(!active)return;connected=state==='SUBSCRIBED';setLiveMessage(connected?'Live updates':'Auto-updating');if(state==='SUBSCRIBED')refresh();});
+  const timer=setInterval(refresh,5000);window.addEventListener('focus',refresh);window.addEventListener('online',refresh);document.addEventListener('visibilitychange',refresh);refresh();
+  return()=>{active=false;sync.stop();liveSync.current=null;clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh);void client.removeChannel(channel);};
+ // Subscription lifetime follows authentication and loading; mutable refs protect drafts.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[user,ready]);
+ useEffect(()=>{if(!editor)void liveSync.current?.refresh();},[editor]);
  const persist = async () => {
   if(saving.current || conflict.current || generation.current===saved.current) return;
   const version=generation.current, snapshot=latest.current; saving.current=true;setStatus('Saving…');
@@ -82,6 +110,7 @@ export default function Workspace() {
   <input ref={file} type="file" accept="application/json,.json" className="hidden" onChange={async e=>{const selected=e.target.files?.[0];if(!selected)return;try{if(selected.size>10*1024*1024)throw Error('Please import a backup smaller than 10 MB.');const imported=parseBackup(JSON.parse(await selected.text()));const next=importNodes(nodes,imported);change(next);selectGrid(next[nodes.length]?.id ?? current);setError('');}catch(err){setError(message(err));}e.target.value='';}}/>
   {error&&<div role="alert" className="error-banner">{error}<div><Button variant="outline" onClick={()=>void persist()}>Retry save</Button><Button variant="outline" onClick={()=>{const draft=localStorage.getItem(localKey);if(draft)download(JSON.parse(draft).backup,'mandaloom-recovery.json');}}>Download recovery</Button><Button variant="outline" onClick={()=>{if(confirm('Reload the cloud version? Export your recovery draft first.'))void load(user);}}>Reload cloud</Button><button aria-label="Dismiss error" className="icon" onClick={()=>setError('')}><X size={16}/></button></div></div>}
   {!supabase&&<div className="demo-banner">LOCAL DEMO <span>Explore freely. Changes stay in this browser. Connect Supabase for private cloud access.</span></div>}
+  {supabase&&ready&&<div role="status" className="live-updates">{remotePending?(conflict.current?"Cloud changes conflict with local edits · recovery draft kept.":"Cloud changes waiting · finish or cancel editing to refresh safely."):liveMessage}</div>}
   {locationNotice&&<div role="status" className="demo-banner">{locationNotice}</div>}
   <div className="content">{query?<><div className="eyebrow">ACROSS YOUR WORKSPACE</div><h1>Search results</h1><div className="results">{nodes.filter(matches).map(n=><button key={n.id} onClick={()=>navigate(n.id)}><strong>{n.title}</strong><small>{references(n.id)?.fullReference} · {trail(nodes,n.id).map(x=>x.title).join(' / ')}</small><ChevronRight size={18}/></button>)}</div></>:active?<>
   <div className="breadcrumbs"><button onClick={()=>navigate(active.rootId)}>All the way home</button>{crumbs.slice(1).map(n=><span key={n.id}><ChevronRight size={12}/><button onClick={()=>navigate(n.id)}>{n.title}</button></span>)}</div><div className="title-row"><div><div className="eyebrow">{active.parentId?'KEEP GOING DEEPER':'THE BIG PICTURE'} <span> / LEVEL {crumbs.length}</span></div><div className="reference-row"><span className="grid-reference">{references(active.id)?.fullReference}</span><button className="reference-copy" aria-label="Copy reference" onClick={async()=>{const ref=references(active.id)?.fullReference;if(!ref)return;try{await navigator.clipboard.writeText(ref);setCopiedReference(ref);}catch{setError('Unable to copy. Select and copy the reference shown above the title.');}}}>{copiedReference===references(active.id)?.fullReference?'Copied':'Copy reference'}</button><button className="reference-copy" aria-label="Copy link" onClick={async()=>{try{await navigator.clipboard.writeText(new URL(gridHref(active.id,nodes),window.location.origin).href);setCopiedLink(active.id);}catch{setError('Unable to copy. Copy the grid URL from your browser address bar.');}}}>{copiedLink===active.id?'Link copied':'Copy link'}</button></div><h1>{active.title}</h1><p className="description">{active.description || 'Give your ideas room to grow. One objective, eight possibilities.'}</p></div><Button variant="outline" onClick={()=>setEditor({...active})}>Edit objective</Button></div>

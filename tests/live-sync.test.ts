@@ -1,0 +1,10 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {createLiveSync,type LiveSnapshot} from '../src/lib/live-sync';
+test('incoming updates never replace a draft, an active editor, a save or a newer revision',async()=>{let state={revision:1,dirty:false,editing:false,saving:false};let applied=0,deferred=0,errors=0;let release:(value:LiveSnapshot)=>void=()=>{};const sync=createLiveSync({read:()=>new Promise(resolve=>release=resolve),state:()=>state,apply:()=>applied++,defer:()=>deferred++,error:()=>errors++});
+ let pending=sync.refresh();state.editing=true;release({revision:2,nodes:[]});await pending;assert.equal(deferred,1);assert.equal(applied,0);
+ state.editing=false;pending=sync.refresh();state.dirty=true;release({revision:2,nodes:[]});await pending;assert.equal(deferred,2);
+ state.dirty=false;state.saving=true;pending=sync.refresh();release({revision:2,nodes:[]});await pending;assert.equal(applied,0);
+ state.saving=false;state.revision=2;pending=sync.refresh();release({revision:2,nodes:[]});await pending;assert.equal(applied,0);
+ pending=sync.refresh();release({revision:3,nodes:[]});await pending;assert.equal(applied,1);
+ pending=sync.refresh();sync.stop();release({revision:4,nodes:[]});await pending;assert.equal(applied,1);assert.equal(errors,0);
+});
+test('network failures recover and unchanged revision checks do not apply snapshots',async()=>{let read=0,applied=0,errors=0;const sync=createLiveSync({read:async()=>{if(++read===1)throw Error('offline');return read===2?null:{revision:2,nodes:[]};},state:()=>({revision:1,dirty:false,editing:false,saving:false}),apply:()=>applied++,defer:()=>assert.fail(),error:()=>errors++});await sync.refresh();await sync.refresh();await sync.refresh();assert.equal(errors,1);assert.equal(applied,1);sync.stop();});

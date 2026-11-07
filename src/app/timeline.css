@@ -1,0 +1,38 @@
+.task-timeline{--timeline-accent:#688956;position:fixed;inset:0 0 0 auto;width:300px;background:var(--paper);color:var(--ink);border:0;border-left:1px solid var(--line);padding:28px 20px 16px;z-index:12;display:flex;flex-direction:column;overflow:hidden}
+.timeline-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.timeline-heading .eyebrow{font-size:8px;letter-spacing:1.8px}
+.timeline-heading h2{display:flex;align-items:center;gap:9px;font-family:Georgia,serif;font-weight:400;font-size:25px;letter-spacing:-.5px;margin:12px 0 0}
+.timeline-heading h2 svg{color:var(--timeline-accent)}
+.timeline-scope{font-size:10px;color:var(--muted);font-weight:400;margin:22px 0 0}
+.timeline-scope select{margin-top:7px;font-size:11px;padding:9px;border-color:var(--line);background:var(--paper);color:var(--ink)}
+.timeline-summary{font-size:10px;color:var(--muted);line-height:1.7;margin:12px 0 18px}
+.timeline-summary>span{display:block;font-size:9px}
+.timeline-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 5px 12px 0;scrollbar-width:thin}
+.timeline-group{margin:0 0 21px}
+.timeline-group h3{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:600;letter-spacing:.3px;margin:0 0 10px;padding:6px 0;color:var(--ink)}
+.timeline-group h3>span{font-size:9px;font-weight:400;color:var(--muted)}
+.timeline-group ol{list-style:none;margin:0 0 0 5px;padding:0 0 0 15px;border-left:1px solid var(--line)}
+.timeline-item{position:relative;margin:0 0 9px}
+.timeline-item:before{content:'';position:absolute;left:-19px;top:16px;width:7px;height:7px;border:1px solid var(--timeline-accent);border-radius:50%;background:var(--paper)}
+.timeline-entry{display:block;width:100%;text-align:left;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;padding:9px 8px;overflow-wrap:anywhere}
+.timeline-entry:hover{background:#6889560d;border-color:var(--line)}
+.timeline-entry[aria-current=location]{border-color:var(--timeline-accent);background:#68895612}
+.timeline-reference{display:block;font-size:8px;color:var(--muted);letter-spacing:.4px;margin-bottom:5px}
+.timeline-entry strong{display:block;font-size:11px;line-height:1.5;font-weight:500}
+.timeline-meta{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:8px;font-size:8px;line-height:1.5}
+.timeline-status,.timeline-priority,.timeline-due{display:inline-flex;align-items:center;gap:3px;padding:2px 5px;border-radius:4px;background:#68895613;color:var(--muted)}
+.timeline-status.status-in-progress{color:#526f36;background:#718e4520}
+.timeline-status.status-blocked,.timeline-priority.priority-high,.timeline-due{color:#a45135;background:#bb653315}
+.timeline-status.status-complete{color:#376647;background:#49775515}
+.timeline-item.is-complete:before{background:var(--timeline-accent)}
+.timeline-item.is-complete strong{text-decoration:line-through;color:var(--muted)}
+.timeline-item.is-overdue:before{border-color:#b46847;background:#b4684720}
+.timeline-item.is-today:before{background:var(--timeline-accent)}
+.timeline-empty{font-size:12px;line-height:1.8;color:var(--muted)}
+html[data-theme=dark] .task-timeline{--timeline-accent:#a7bd8f}
+html[data-theme=dark] .timeline-status.status-in-progress,html[data-theme=dark] .timeline-status.status-complete{color:#c1d6ad;background:#8ca67120}
+html[data-theme=dark] :is(.timeline-status.status-blocked,.timeline-priority.priority-high,.timeline-due){color:#f0bda4;background:#b4684720}
+@media(min-width:1360px){.has-task-timeline .main{margin-right:300px;width:calc(100% - 572px)}.has-task-timeline .content{padding-left:30px;padding-right:30px}.has-task-timeline .header-left strong{max-width:170px}.header-actions .timeline-trigger{display:none}}
+.timeline-drawer:not([open]){display:none}
+.timeline-drawer{inset:0 0 0 auto;width:min(340px,calc(100vw - 24px));max-width:none;height:100dvh;max-height:none;margin:0;padding-top:22px;box-shadow:-12px 0 40px #14271a33}
+.timeline-drawer::backdrop{background:#15251d80;backdrop-filter:blur(2px)}

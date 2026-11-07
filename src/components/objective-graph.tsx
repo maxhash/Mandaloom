@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useRef,useState,type KeyboardEvent,type PointerEvent} from 'react';
 import {Expand,Minus,Plus} from 'lucide-react';
 import {Button} from '@/components/ui/button';
+import {ReferenceText} from '@/components/ui/reference-preview';
 import {positions,referenceLookup,trail,type Objective} from '@/lib/model';
 import {fitGraph,objectiveGraph,zoomGraph,type GraphCamera} from '@/lib/graph';
 
@@ -77,6 +78,6 @@ export function ObjectiveGraph({nodes,rootId,current,onSelect,onOpen,onEdit}:Pro
   </div>
   <p className="graph-help" id="graph-help">Select a node for details. Drag the background to pan; scroll or use + / − to zoom. Keyboard: arrow keys to pan, 0 to fit.</p>
   {branches.length>0&&<div className="graph-legend" aria-label="Main branches">{branches.map(branch=>{return <button key={branch.id} onClick={()=>onSelect(branch.id)} title={branch.title}><span style={{background:palette[positions.indexOf(branch.position)]}}/>{shorten(branch.title,27)}</button>;})}</div>}
-  {selected&&<div className="graph-selection" aria-label="Selected objective"><div><small>{references(selected.id)?.fullReference}</small><h2>{selected.title}</h2><p>{selected.status} · {selected.priority} priority{selected.dueDate?` · Due ${selected.dueDate}`:''}</p>{selected.description&&<p className="graph-selection-description">{selected.description}</p>}</div><div className="graph-selection-actions">{selectedChildren.length>0&&<Button variant="outline" onClick={()=>toggle(selected.id)}>{collapsed.has(selected.id)?'Expand branch':'Collapse branch'}</Button>}<Button variant="outline" onClick={()=>onEdit(selected)}>Edit selected objective</Button><Button onClick={()=>onOpen(selected.id)}>Open Mandala view</Button></div></div>}
+  {selected&&<div className="graph-selection" aria-label="Selected objective"><div><small>{references(selected.id)?.fullReference}</small><h2>{selected.title}</h2><p>{selected.status} · {selected.priority} priority{selected.dueDate?` · Due ${selected.dueDate}`:''}</p>{selected.description&&<p className="graph-selection-description"><ReferenceText text={selected.description} context={{nodes,rootId}}/></p>}</div><div className="graph-selection-actions">{selectedChildren.length>0&&<Button variant="outline" onClick={()=>toggle(selected.id)}>{collapsed.has(selected.id)?'Expand branch':'Collapse branch'}</Button>}<Button variant="outline" onClick={()=>onEdit(selected)}>Edit selected objective</Button><Button onClick={()=>onOpen(selected.id)}>Open Mandala view</Button></div></div>}
  </section>;
 }

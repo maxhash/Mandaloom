@@ -112,3 +112,9 @@ Open grids follow committed MCP and other-browser changes automatically, preserv
 A five-second foreground fallback plus focus/online checks catches missed notifications; without 006 it temporarily uses the existing load RPC. With 006, unchanged revisions use a small revision RPC and skip downloading objectives. Open editors defer incoming snapshots. Cancelling a clean edit applies waiting updates; saving a draft against an externally changed workspace keeps the local recovery draft and shows the existing export/reload conflict workflow. Local demo mode remains local. Realtime subscriptions, timers and listeners are removed on sign-out/unmount. Updates appear after each committed tool operation, not token-by-token while ChatGPT is composing text.
 
 Validation: npm test; PLAYWRIGHT_CHANNEL=msedge npx playwright test; PLAYWRIGHT_CHANNEL=msedge npx playwright test --config playwright.live.config.ts (mocked authenticated HTTP/WebSocket service; no production credentials or data).
+
+## Objective timeline
+
+The right-side timeline lists objectives across all Mandalas in ascending due-date order, grouped by calendar date. Choose Current Mandala to include that root and all its nested objectives. Completed objectives retain their dates and status; undated objectives appear under Unscheduled. References, status, non-Normal priority and overdue/today indicators accompany each entry. Selecting an entry opens its existing grid without changing objective data. The list follows saved edits and incoming workspace updates.
+
+On screens narrower than 1360px, use Timeline in the header to open the right-side drawer. Close it with its close control or Escape; choosing an objective also closes it. Desktop and drawer lists share the same scope and chronological grouping. No database migration or new task dates are required.

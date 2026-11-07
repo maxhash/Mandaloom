@@ -1,5 +1,30 @@
 import {test,expect} from '@playwright/test';
 import {seed,makeNode,backup,assignReferences} from '../../src/lib/model';
+
+for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
+ test(`top and bottom parent navigation work at every level (${viewport.width}px)`,async({page})=>{
+  await page.setViewportSize(viewport);
+  const nodes=seed();nodes.push(makeNode('Deep objective',nodes[1],0));
+  await page.addInitScript(data=>localStorage.setItem('mandaloom-demo',JSON.stringify(data)),backup(assignReferences(nodes).nodes));
+  await page.goto('/');
+  const parentButtons=page.getByRole('button',{name:'Back to parent',exact:true});
+  await expect(page.locator('.mandala-grid')).toBeVisible();await expect(parentButtons).toHaveCount(0);
+  await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
+  const parentUrl=page.url();await expect(parentButtons).toHaveCount(2);
+  const top=page.locator('.above-grid').getByRole('button',{name:'Back to parent',exact:true});
+  const bottom=page.locator('.below-grid').getByRole('button',{name:'Back to parent',exact:true});
+  await expect(top).toBeVisible();
+  const topBox=await top.boundingBox(),gridBox=await page.locator('.mandala-grid').boundingBox();
+  expect(topBox!.y+topBox!.height).toBeLessThan(gridBox!.y);
+  await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Deep objective',exact:true})}).click();
+  const deepUrl=page.url();await expect(parentButtons).toHaveCount(2);
+  await top.focus();await expect(top).toBeFocused();await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(parentUrl);
+  await page.goto(deepUrl);await bottom.click();await expect(page).toHaveURL(parentUrl);
+  await top.click();await expect(page.locator('.grid-reference')).toHaveText('M001/R');
+  await expect(parentButtons).toHaveCount(0);
+ });
+}
 test('unique grid URLs survive deep reload, new tabs, back/forward, rename and deletion',async({page,context})=>{
  await context.grantPermissions(['clipboard-read','clipboard-write']);
  const nodes=seed();const nested=makeNode('Deep objective',nodes[1],0);nodes.push(nested);const initial=backup(assignReferences(nodes).nodes);

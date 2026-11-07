@@ -16,6 +16,9 @@ for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
   await expect(top).toBeVisible();
   const topBox=await top.boundingBox(),gridBox=await page.locator('.mandala-grid').boundingBox();
   expect(topBox!.y+topBox!.height).toBeLessThan(gridBox!.y);
+  expect(Math.abs(topBox!.x+topBox!.width/2-(gridBox!.x+gridBox!.width/2))).toBeLessThan(1);
+  const toolbarBox=await page.locator('.grid-toolbar').boundingBox();
+  expect(topBox!.y).toBeGreaterThan(toolbarBox!.y+toolbarBox!.height);
   await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Deep objective',exact:true})}).click();
   const deepUrl=page.url();await expect(parentButtons).toHaveCount(2);
   await top.focus();await expect(top).toBeFocused();await page.keyboard.press('Enter');

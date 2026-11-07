@@ -1,0 +1,39 @@
+.view-switch{flex-wrap:wrap;gap:4px!important}
+.view-switch button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid transparent;border-radius:5px;padding:6px 7px;background:none;color:var(--muted);font-size:10px}
+.view-switch button[aria-pressed=true]{border-color:var(--line);background:#68895610;color:var(--ink)}
+.objective-graph{border:1px solid var(--line);border-radius:10px;background:var(--paper);overflow:hidden}
+.graph-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.graph-camera-controls,.graph-branch-controls{display:flex;align-items:center;gap:7px}
+.graph-camera-controls output{font-size:10px;color:var(--muted);min-width:37px;text-align:center}
+.graph-branch-controls{flex-wrap:wrap;gap:12px}
+.graph-branch-controls>button{font-size:10px;border:0;background:none;padding:5px 0;color:var(--muted)}
+.graph-branch-controls label{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:400;color:var(--muted);margin:0}
+.graph-branch-controls input{width:auto;margin:0;accent-color:var(--green)}
+.graph-surface{position:relative;height:clamp(440px,65vh,720px);min-width:0;background:radial-gradient(ellipse at center,#91a87a0a,transparent 75%)}
+.graph-canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.graph-canvas:active{cursor:grabbing}
+.graph-canvas:focus-visible{outline:2px solid #9aaf71;outline-offset:-3px}
+.graph-edge{stroke-width:1;opacity:.3}
+.graph-edge.is-connected{stroke-width:1.5;opacity:.8}
+.graph-node{cursor:pointer;outline:none}
+.graph-node-hit{fill:transparent}
+.graph-node-ring{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
+.graph-node.is-selected .graph-node-ring,.graph-node:focus-visible .graph-node-ring,.graph-node:hover .graph-node-ring{opacity:1}
+.graph-node.is-complete .graph-node-dot{opacity:.5}
+.graph-node-label{fill:var(--ink);font-size:13px;paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round;pointer-events:all}
+.graph-node.is-selected .graph-node-label{font-weight:600}
+.graph-collapsed-mark{fill:var(--paper);font-size:13px;font-weight:bold;pointer-events:none}
+.graph-count{position:absolute;bottom:12px;left:15px;font-size:9px;color:var(--muted);pointer-events:none}
+.graph-help{padding:12px 15px;margin:0;border-top:1px solid var(--line);font-size:10px;line-height:1.8;color:var(--muted)}
+.graph-legend{display:flex;gap:6px 16px;flex-wrap:wrap;padding:0 15px 14px}
+.graph-legend button{display:flex;align-items:center;gap:5px;border:0;background:none;padding:3px 0;font-size:9px;color:var(--muted)}
+.graph-legend button>span{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.graph-selection{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;border-top:1px solid var(--line);padding:18px}
+.graph-selection>div:first-child{flex:1;min-width:180px}
+.graph-selection small{font-size:9px;color:var(--muted)}
+.graph-selection h2{font-family:Georgia,serif;font-size:22px;font-weight:400;line-height:1.35;margin:8px 0;overflow-wrap:anywhere}
+.graph-selection p{font-size:10px;color:var(--muted);line-height:1.8;margin:8px 0}
+.graph-selection-description{max-width:650px;white-space:pre-wrap}
+.graph-selection-actions{display:flex;flex-wrap:wrap;gap:8px}
+.graph-selection-actions .button{font-size:10px}
+@media(max-width:760px){.view-switch button{font-size:9px;padding:5px}.view-switch button svg{width:12px}.graph-controls{padding:10px;gap:8px}.graph-branch-controls{gap:10px}.graph-surface{height:480px}.graph-selection{padding:14px}.graph-selection-actions .button{padding:8px 10px}}

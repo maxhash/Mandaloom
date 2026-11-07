@@ -11,14 +11,16 @@ for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
   await expect(page.locator('.mandala-grid')).toBeVisible();await expect(parentButtons).toHaveCount(0);
   await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Trading Strategy',exact:true})}).click();
   const parentUrl=page.url();await expect(parentButtons).toHaveCount(2);
-  const top=page.locator('.above-grid').getByRole('button',{name:'Back to parent',exact:true});
+  const top=page.locator('.grid-toolbar').getByRole('button',{name:'Back to parent',exact:true});
   const bottom=page.locator('.below-grid').getByRole('button',{name:'Back to parent',exact:true});
   await expect(top).toBeVisible();
   const topBox=await top.boundingBox(),gridBox=await page.locator('.mandala-grid').boundingBox();
   expect(topBox!.y+topBox!.height).toBeLessThan(gridBox!.y);
   expect(Math.abs(topBox!.x+topBox!.width/2-(gridBox!.x+gridBox!.width/2))).toBeLessThan(1);
-  const toolbarBox=await page.locator('.grid-toolbar').boundingBox();
-  expect(topBox!.y).toBeGreaterThan(toolbarBox!.y+toolbarBox!.height);
+  for(const side of [page.locator('.grid-toolbar > span').first(),page.locator('.grid-toolbar > span').last()]){
+   const box=await side.boundingBox();
+   expect(Math.abs(topBox!.y+topBox!.height/2-(box!.y+box!.height/2))).toBeLessThan(1);
+  }
   await page.locator('.cell-main').filter({has:page.getByRole('heading',{name:'Deep objective',exact:true})}).click();
   const deepUrl=page.url();await expect(parentButtons).toHaveCount(2);
   await top.focus();await expect(top).toBeFocused();await page.keyboard.press('Enter');
